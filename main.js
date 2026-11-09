@@ -5,88 +5,78 @@ const inputAuthor = document.querySelector('input[name=author]');
 const inputPageCount = document.querySelector('input[name=pageCount]');
 const inputHasRead = document.querySelector('input[name=hasRead]');
 const cards = document.getElementById('cards');
-
-const myLibrary = [];
+const cardTemplate = document.getElementById("card-template");
 
 class Book {
-    constructor(title, author, pageCount, read = false) {
+    constructor(title, author, pageCount, hasRead = false) {
         this.id = crypto.randomUUID();
         this.title = title;
         this.author = author;
         this.pageCount = pageCount;
-        this.hasRead = read;
+        this.hasRead = hasRead;
+    }
+
+    markRead() {
+        this.hasRead = true;
     }
 }
 
-function addBookToLibrary(title, author, pageCount, hasRead = false) {
-    myLibrary.push(new Book(title, author, pageCount, hasRead));
-    displayLibrary();
-}
+class Library {
+    #books = [];
 
-function displayLibrary() {
-    cards.replaceChildren(...myLibrary.map(createCard));
-}
+    get books() {
+        return [...this.#books];
+    }
 
-function makeEl(tagName, className, textContent = "") {
-    const el = document.createElement(tagName);
-    el.className = className;
-    el.textContent = textContent;
+    add(title, author, pageCount, hasRead) {
+        this.#books.push(new Book(title, author, pageCount, hasRead));
+    }
 
-    return el;
+    remove(id) {
+        this.#books = this.#books.filter(b => b.id !== id);
+    }
+
+    markRead(id) {
+        this.#books.find(b => b.id === id)?.markRead();
+    }
 }
 
 function createCard(book) {
-    const card = makeEl('div', 'card');
-    card.setAttribute("data-id", book.id);
-
-    const info = makeEl('div', 'info');
-    const title = makeEl('h2', 'title', book.title);
-    const author = makeEl('p', 'author', book.author);
-    const pageCount = makeEl('p', 'page-count', book.pageCount + ' pages');
-    const hasRead = makeEl('p', 'has-read', book.hasRead ? "Has been read" : "Not read yet");
-    const cardActions = makeEl('div', 'card-actions');
-
-    const buttonRead = makeEl('button', 'button-read', 'Read')
-    buttonRead.disabled = book.hasRead;
-    buttonRead.dataset.action = 'read';
-
-    const buttonDelete = makeEl('button', 'button-delete', 'Delete');
-    buttonDelete.dataset.action = 'delete';
-
-    cardActions.appendChild(buttonRead);
-    cardActions.appendChild(buttonDelete);
-
-    info.appendChild(title);
-    info.appendChild(author);
-    info.appendChild(pageCount);
-    info.appendChild(hasRead);
-
-    card.appendChild(info);
-    card.appendChild(cardActions);
-
+    const card = cardTemplate.content.firstElementChild.cloneNode(true);
+    card.dataset.id = book.id;
+    card.querySelector(".title").textContent = book.title;
+    card.querySelector(".author").textContent = book.author;
+    card.querySelector(".page-count").textContent = `${book.pageCount} pages`;
+    card.querySelector(".has-read").textContent = book.hasRead ? "Has been read" : "Not read yet";
+    card.querySelector(".button-read").disabled = book.hasRead;
     return card;
 }
 
-form.addEventListener('submit', (event) => {
+const library = new Library();
+
+function render() {
+    cards.replaceChildren(...library.books.map(createCard));
+}
+
+form.addEventListener("submit", (event) => {
     event.preventDefault();
     const title = inputTitle.value.trim();
     const author = inputAuthor.value.trim();
     if (!title || !author) return;
-    addBookToLibrary(title, author, +inputPageCount.value, inputHasRead.checked);
+
+    library.add(title, author, Number(inputPageCount.value), inputHasRead.checked);
     form.reset();
+    render();
 });
 
-cards.addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-action]');
+cards.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
     if (!button) return;
 
-    const id = button.closest('.card').dataset.id;
-    if (button.dataset.action === 'read') {
-        myLibrary.find(b => b.id === id).hasRead = true;
-    } else {
-        myLibrary.splice(myLibrary.findIndex(b => b.id === id), 1);
-    }
-    displayLibrary();
+    const id = button.closest(".card").dataset.id;
+    if (button.dataset.action === "read") library.markRead(id);
+    else library.remove(id);
+    render();
 });
 
 inputPageCount.addEventListener('input', () => {
