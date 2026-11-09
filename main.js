@@ -8,12 +8,14 @@ const cards = document.getElementById('cards');
 
 const myLibrary = [];
 
-function Book(title, author, pages, read = false) {
-    this.id = crypto.randomUUID();
-    this.title = title;
-    this.author = author;
-    this.pageCount = pages;
-    this.hasRead = read;
+class Book {
+    constructor(title, author, pageCount, read = false) {
+        this.id = crypto.randomUUID();
+        this.title = title;
+        this.author = author;
+        this.pageCount = pageCount;
+        this.hasRead = read;
+    }
 }
 
 function addBookToLibrary(title, author, pageCount, hasRead = false) {
@@ -70,7 +72,7 @@ form.addEventListener('submit', (event) => {
     const title = inputTitle.value.trim();
     const author = inputAuthor.value.trim();
     if (!title || !author) return;
-    addBookToLibrary(title, author, inputPageCount.valueAsNumber, inputHasRead.checked);
+    addBookToLibrary(title, author, +inputPageCount.value, inputHasRead.checked);
     form.reset();
 });
 
